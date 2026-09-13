@@ -2,7 +2,11 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.dto.CommentCreateDto;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemWithCommentsDto;
+import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
 import ru.practicum.shareit.item.service.ItemService;
 
 import java.util.List;
@@ -33,13 +37,21 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getById(@PathVariable long itemId) {
-        return itemService.getById(itemId);
+    public ItemWithCommentsDto getById(@RequestHeader(value = USER_HEADER, required = false) Long userId,
+                                       @PathVariable long itemId) {
+        return itemService.getById(userId, itemId);
     }
 
     @GetMapping
-    public List<ItemDto> getAllByOwner(@RequestHeader(USER_HEADER) long userId) {
+    public List<ItemWithBookingsDto> getAllByOwner(@RequestHeader(USER_HEADER) long userId) {
         return itemService.getAllByOwner(userId);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto addComment(@RequestHeader(USER_HEADER) long userId,
+                                 @PathVariable long itemId,
+                                 @RequestBody CommentCreateDto commentCreateDto) {
+        return itemService.addComment(userId, itemId, commentCreateDto);
     }
 
     @GetMapping("/search")

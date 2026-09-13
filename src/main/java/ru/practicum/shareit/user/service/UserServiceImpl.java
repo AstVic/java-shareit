@@ -2,6 +2,7 @@ package ru.practicum.shareit.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -14,10 +15,12 @@ import java.util.Collection;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public UserDto create(UserDto userDto) {
         checkUser(userDto);
 
@@ -28,9 +31,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getById(long userId) {
-        checkById(userId);
-
-        return UserMapper.toUserDto(userRepository.findById(userId));
+        return UserMapper.toUserDto(getUser(userId));
     }
 
     @Override
@@ -41,10 +42,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserDto update(long userId, UserDto userDto) {
-        checkById(userId);
+        User user = getUser(userId);
 
-        User user = userRepository.findById(userId);
         if (userDto.getName() != null) {
             user.setName(userDto.getName());
         }
@@ -55,21 +56,21 @@ public class UserServiceImpl implements UserService {
             }
             user.setEmail(userDto.getEmail());
         }
-        User updatedUser = userRepository.update(user);
+        User updatedUser = userRepository.save(user);
         return UserMapper.toUserDto(updatedUser);
     }
 
     @Override
+    @Transactional
     public void delete(long userId) {
-        checkById(userId);
+        getUser(userId);
 
-        userRepository.delete(userId);
+        userRepository.deleteById(userId);
     }
 
-    private void checkById(long userId) {
-        if (userRepository.findById(userId) == null) {
-            throw new NotFoundException("Пользователя с таким id нет");
-        }
+    private User getUser(long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет"));
     }
 
     private void checkUser(UserDto userDto) {
